@@ -1,6 +1,59 @@
-import Head from 'next/head'
+import { log } from "console";
+import Head from "next/head";
+import Image from "next/image";
+import { useState } from "react";
+import clsx from "clsx";
+
+interface Movie {
+  Title: string;
+  imdbID: string;
+  Poster: string;
+  Type: string;
+  Year: string;
+}
+
+interface MovieDetails extends Movie {
+  Plot: string;
+}
+
+// TODO
+// utiliser des state pour controler la recherhcer
 
 export default function Home() {
+  const [loading, setLoading] = useState(false);
+  const [movies, setMovies] = useState<Movie[]>([]);
+  const [search, setSearch] = useState("");
+  const [selectedMovie, setSelectedMovie] = useState<MovieDetails | null>(null);
+  const [total, setTotal] = useState(0);
+  const [called, setCalled] = useState(false);
+
+  const fetchMovies = async () => {
+    setLoading(true);
+
+    const resMovies = await fetch(
+      `http://www.omdbapi.com/?apikey=${process.env.NEXT_PUBLIC_FILM_KEY}&s=${search}`
+    ).then((res) => res.json());
+
+    console.log("resMovies", resMovies);
+
+    setSearch("");
+    setMovies(resMovies.Search || []);
+    setTotal(Number(resMovies.totalResults || 0));
+    setLoading(false);
+    setCalled(true);
+  };
+
+  const closeMoreInfoDiv = () => setSelectedMovie(null);
+
+  const getMoreInfo = async (movie: Movie) => {
+    const resMoviePlot: MovieDetails = await fetch(
+      `http://www.omdbapi.com/?apikey=${process.env.NEXT_PUBLIC_FILM_KEY}&i=${movie.imdbID}&plot=full`
+    ).then((res) => res.json());
+    console.log(resMoviePlot);
+
+    setSelectedMovie(resMoviePlot);
+  };
+
   return (
     <div className="flex flex-col items-center justify-center min-h-screen py-2">
       <Head>
@@ -8,75 +61,117 @@ export default function Home() {
         <link rel="icon" href="/favicon.ico" />
       </Head>
 
+      <h1 className="text-orange-400 w-full text-left px-12 py-4 text-3xl font-black animate-pulse">
+        MyFilmSearch
+      </h1>
+
       <main className="flex flex-col items-center justify-center w-full flex-1 px-20 text-center">
-        <h1 className="text-6xl font-bold">
-          Welcome to{' '}
-          <a className="text-blue-600" href="https://nextjs.org">
-            Next.js!
-          </a>
-        </h1>
-
-        <p className="mt-3 text-2xl">
-          Get started by editing{' '}
-          <code className="p-3 font-mono text-lg bg-gray-100 rounded-md">
-            pages/index.tsx
-          </code>
-        </p>
-
-        <div className="flex flex-wrap items-center justify-around max-w-4xl mt-6 sm:w-full">
-          <a
-            href="https://nextjs.org/docs"
-            className="p-6 mt-6 text-left border w-96 rounded-xl hover:text-blue-600 focus:text-blue-600"
+        <div className="w-full">
+          <input
+            className="border border-slate-300 p-4 rounded-lg my-8 mr-8"
+            type="text"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Votre recherche"
+          />
+          <button
+            onClick={fetchMovies}
+            disabled={loading}
+            className="p-4 rounded-lg bg-orange-400 text-white hover:animate-pulse"
           >
-            <h3 className="text-2xl font-bold">Documentation &rarr;</h3>
-            <p className="mt-4 text-xl">
-              Find in-depth information about Next.js features and API.
-            </p>
-          </a>
-
-          <a
-            href="https://nextjs.org/learn"
-            className="p-6 mt-6 text-left border w-96 rounded-xl hover:text-blue-600 focus:text-blue-600"
-          >
-            <h3 className="text-2xl font-bold">Learn &rarr;</h3>
-            <p className="mt-4 text-xl">
-              Learn about Next.js in an interactive course with quizzes!
-            </p>
-          </a>
-
-          <a
-            href="https://github.com/vercel/next.js/tree/canary/examples"
-            className="p-6 mt-6 text-left border w-96 rounded-xl hover:text-blue-600 focus:text-blue-600"
-          >
-            <h3 className="text-2xl font-bold">Examples &rarr;</h3>
-            <p className="mt-4 text-xl">
-              Discover and deploy boilerplate example Next.js projects.
-            </p>
-          </a>
-
-          <a
-            href="https://vercel.com/import?filter=next.js&utm_source=create-next-app&utm_medium=default-template&utm_campaign=create-next-app"
-            className="p-6 mt-6 text-left border w-96 rounded-xl hover:text-blue-600 focus:text-blue-600"
-          >
-            <h3 className="text-2xl font-bold">Deploy &rarr;</h3>
-            <p className="mt-4 text-xl">
-              Instantly deploy your Next.js site to a public URL with Vercel.
-            </p>
-          </a>
+            Rechercher
+          </button>
         </div>
+        {loading && <div>Chargement en cours... 🔥 </div>}
+        {called && <div>Nombre de résultats: {total}</div>}
+        {selectedMovie && (
+          <div
+            id={selectedMovie.imdbID}
+            className="fixed bg-white w-[80vw] border border-slate-100 rounded-lg flex z-50 left-[9.5%] top-[25%] p-4"
+          >
+            <div className="w-[200px] h-[300px] relative p-4">
+              <Image
+                src={selectedMovie.Poster}
+                alt={`Affiche ${selectedMovie.Title}`}
+                layout="fill"
+              />
+            </div>
+
+            <div className="text-left px-12 py-4 w-full">
+              <div className="w-full flex justify-end">
+                <button
+                  className="p-2 rounded-lg bg-orange-300 hover:bg-orange-400 text-white px-4 "
+                  onClick={closeMoreInfoDiv}
+                >
+                  X
+                </button>
+              </div>
+
+              <h2 className="uppercase font-bold text-orange-400 my-2">
+                {selectedMovie.Title}
+              </h2>
+              <p>
+                Type de média : {selectedMovie.Type}
+                <br />
+                Année de sortie : {selectedMovie.Year}
+                <br />
+                Synopsis : {selectedMovie.Plot}
+              </p>
+            </div>
+          </div>
+        )}
+
+        {!!movies.length ? (
+          <ul className="flex flex-col w-[80vw] my-8">
+            {movies.map((movie) => (
+              <li
+                key={movie.imdbID}
+                className="flex my-2 p-4 border border-slate-100 rounded-lg hover:shadow-md hover:bg-white relative"
+                data-aos="fade-up"
+                data-aos-anchor-placement="top-bottom"
+              >
+                <div className="w-[100px]">
+                  {/* <Image src={movie.Poster} /> */}
+                  <img src={movie.Poster} alt="affiche" />
+                </div>
+
+                <div className="flex flex-col justify-between w-full">
+                  <div className="mx-4 text-left">
+                    <h2 className="uppercase font-bold text-orange-400">
+                      {movie.Title}
+                    </h2>
+                    <p>
+                      Année de sortie : {movie.Year}
+                      <br />
+                      Type de média : {movie.Type}
+                    </p>
+                  </div>
+                  <div className="flex justify-end w-full">
+                    <button
+                      className="p-2 rounded-lg bg-orange-300 hover:bg-orange-400 text-white"
+                      onClick={() => getMoreInfo(movie)}
+                    >
+                      En savoir plus
+                    </button>
+                  </div>
+                </div>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          called && (
+            <p className="error-title max-w-[400px]">
+              Désolé, nous n'avons malheureusement pas trouvé de résultat à
+              votre recherche 🥺
+            </p>
+          )
+        )}
       </main>
 
-      <footer className="flex items-center justify-center w-full h-24 border-t">
-        <a
-          className="flex items-center justify-center"
-          href="https://vercel.com?utm_source=create-next-app&utm_medium=default-template&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Powered by{' '}
-          <img src="/vercel.svg" alt="Vercel Logo" className="h-4 ml-2" />
-        </a>
+      <footer className="flex flex-col items-center justify-center w-full h-24 border-t">
+        <p>Retrouvez mon gitHub</p>
+        <a href="https://github.com/ophelie-gaudin">ICI ! </a>
       </footer>
     </div>
-  )
+  );
 }

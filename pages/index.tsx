@@ -1,8 +1,6 @@
-import { log } from "console";
 import Head from "next/head";
 import Image from "next/image";
 import { useState } from "react";
-import clsx from "clsx";
 
 interface Movie {
   Title: string;
@@ -130,9 +128,12 @@ export default function Home() {
                 data-aos="fade-up"
                 data-aos-anchor-placement="top-bottom"
               >
-                <div className="w-[100px]">
-                  {/* <Image src={movie.Poster} /> */}
-                  <img src={movie.Poster} alt="affiche" />
+                <div className="w-[100px] h-[150px] relative">
+                  <Image
+                    src={movie.Poster}
+                    alt={`Affiche ${movie.Title}`}
+                    layout="fill"
+                  />
                 </div>
 
                 <div className="flex flex-col justify-between w-full">

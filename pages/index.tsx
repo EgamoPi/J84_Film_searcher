@@ -29,7 +29,7 @@ export default function Home() {
     setLoading(true);
 
     const resMovies = await fetch(
-      `http://www.omdbapi.com/?apikey=${process.env.NEXT_PUBLIC_FILM_KEY}&s=${search}`
+      `https://www.omdbapi.com/?apikey=${process.env.NEXT_PUBLIC_FILM_KEY}&s=${search}`
     ).then((res) => res.json());
 
     console.log("resMovies", resMovies);
@@ -45,7 +45,7 @@ export default function Home() {
 
   const getMoreInfo = async (movie: Movie) => {
     const resMoviePlot: MovieDetails = await fetch(
-      `http://www.omdbapi.com/?apikey=${process.env.NEXT_PUBLIC_FILM_KEY}&i=${movie.imdbID}&plot=full`
+      `https://www.omdbapi.com/?apikey=${process.env.NEXT_PUBLIC_FILM_KEY}&i=${movie.imdbID}&plot=full`
     ).then((res) => res.json());
     console.log(resMoviePlot);
 
